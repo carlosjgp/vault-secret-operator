@@ -36,15 +36,21 @@ type VaultSecretStatus struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 // VaultAgentSpec is the Schema for the vaultsecrets API
 type VaultAgentSpec struct {
-	Image    ContainerImageSpec `json:"image,omitempty"`
-	AutoAuth string             `json:"autoAuth,omitempty"`
+	Image ContainerImageSpec `json:"image,omitempty"`
+	// Entrypoint array. Not executed within a shell.
+	// The docker image's ENTRYPOINT is used if this is not provided.
+	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+	// cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax
+	// can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded,
+	// regardless of whether the variable exists or not.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+	// +optional
+	Command        []string `json:"command,omitempty" protobuf:"bytes,3,rep,name=command"`
+	AutoAuthMethod string   `json:"autoAuthMethod"`
 }
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // SecretSpec is the Schema for the vaultsecrets API
 type SecretSpec struct {
@@ -52,29 +58,23 @@ type SecretSpec struct {
 	Keys []SecretKeySpec `json:"keys"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 // SecretKeySpec is the Schema for the vaultsecrets API
 type SecretKeySpec struct {
 	File string `json:"file"`
 	Key  string `json:"key"`
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
 // ConsulTemplateSpec is the Schema for the vaultsecrets API
 type ConsulTemplateSpec struct {
 	Image     ContainerImageSpec `json:"image,omitempty"`
-	Templates map[string]string  `json:"templates"`
+	Templates string             `json:"templates"`
 }
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ContainerImageSpec is the Schema for the vaultsecrets API
 type ContainerImageSpec struct {
-	Repository      string `json:"repository,omitempty"`
-	Tag             string `json:"tag,omitempty"`
-	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+	Repository      string            `json:"repository,omitempty"`
+	Tag             string            `json:"tag,omitempty"`
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

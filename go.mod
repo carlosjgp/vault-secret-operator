@@ -3,6 +3,7 @@ module github.com/carlosjgp/vault-secret-operator
 go 1.13
 
 require (
+	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/go-openapi/spec v0.19.0
 	github.com/operator-framework/operator-sdk v0.12.0
 	github.com/spf13/pflag v1.0.3

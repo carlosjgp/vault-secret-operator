@@ -8,6 +8,7 @@ ENV OPERATOR=/usr/local/bin/vault-secret-operator \
 COPY build/_output/bin/vault-secret-operator ${OPERATOR}
 
 COPY build/bin /usr/local/bin
+COPY templates /templates
 RUN  /usr/local/bin/user_setup
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
