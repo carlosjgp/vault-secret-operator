@@ -3,7 +3,9 @@ package vaultsecret
 import (
 	"bytes"
 	"context"
-	"html/template"
+	"fmt"
+
+	"text/template"
 
 	"github.com/Masterminds/sprig"
 	vaultsecretv1alpha1 "github.com/carlosjgp/vault-secret-operator/pkg/apis/vaultsecret/v1alpha1"
@@ -90,24 +92,7 @@ func (r *ReconcileVaultSecret) Reconcile(request reconcile.Request) (reconcile.R
 	reqLogger.Info("Reconciling VaultSecret")
 
 	// Fetch the VaultSecret instance with defaults
-	instance := &vaultsecretv1alpha1.VaultSecret{
-		Spec: vaultsecretv1alpha1.VaultSecretSpec{
-			VaultAgent: vaultsecretv1alpha1.VaultAgentSpec{
-				Image: vaultsecretv1alpha1.ContainerImageSpec{
-					Repository:      "vault",
-					Tag:             "latest",
-					ImagePullPolicy: "Always",
-				},
-			},
-			ConsulTemplate: vaultsecretv1alpha1.ConsulTemplateSpec{
-				Image: vaultsecretv1alpha1.ContainerImageSpec{
-					Repository:      "hashicorp/consul-template",
-					Tag:             "latest",
-					ImagePullPolicy: "Always",
-				},
-			},
-		},
-	}
+	instance := &vaultsecretv1alpha1.VaultSecret{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -121,12 +106,16 @@ func (r *ReconcileVaultSecret) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	// Define a new Pod object
-	allResources := []metav1.Object{}
 	consulTemplatesCM := newConsulTemplatesConfigMapForCR(instance)
 	vaultAgentCM := newVaultAgentConfigMapForCR(instance)
 	pod := newPodForCR(instance, consulTemplatesCM, vaultAgentCM)
+	allConfigMaps := []*corev1.ConfigMap{
+		consulTemplatesCM,
+		vaultAgentCM,
+	}
 
 	//TODO create serviceaccount
+	allResources := []metav1.Object{}
 
 	allResources = append(
 		allResources,
@@ -140,6 +129,26 @@ func (r *ReconcileVaultSecret) Reconcile(request reconcile.Request) (reconcile.R
 		if err := controllerutil.SetControllerReference(instance, k8sResource, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
+	}
+
+	// Check if ConfigMaps already exists
+	for _, cm := range allConfigMaps {
+		found := &corev1.ConfigMap{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: cm.Name, Namespace: cm.Namespace}, found)
+		if err != nil && errors.IsNotFound(err) {
+			reqLogger.Info("Creating a new ConfigMap", "ConfigMap.Namespace", cm.Namespace, "ConfigMap.Name", cm.Name)
+			err = r.client.Create(context.TODO(), cm)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
+			// ConfigMap created successfully - don't requeue
+		} else if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		// Pod already exists - don't requeue
+		reqLogger.Info("Skip reconcile: ConfigMap already exists", "PoConfigMap.Namespace", found.Namespace, "ConfigMap.Name", found.Name)
 	}
 
 	// Check if this Pod already exists
@@ -185,8 +194,8 @@ func newPodForCR(cr *vaultsecretv1alpha1.VaultSecret, consulTemplates *corev1.Co
 				cr.Spec.ExtraContainers,
 				corev1.Container{
 					Name:            "vault-agent",
-					Image:           cr.Spec.VaultAgent.Image.Repository + ":" + cr.Spec.VaultAgent.Image.Tag,
-					ImagePullPolicy: cr.Spec.VaultAgent.Image.ImagePullPolicy,
+					Image:           getVaultAgentImage(&cr.Spec),
+					ImagePullPolicy: getVaultAgentImagePullPolicy(&cr.Spec),
 					Command: []string{
 						"vault",
 						"agent",
@@ -198,14 +207,18 @@ func newPodForCR(cr *vaultsecretv1alpha1.VaultSecret, consulTemplates *corev1.Co
 							ReadOnly:  true,
 							MountPath: "/etc/vault",
 						},
+						corev1.VolumeMount{
+							Name:      "vault-token",
+							MountPath: "/tmp/vault/agent/token",
+						},
 					},
 				},
 				corev1.Container{
 					Name:            "consul-template",
-					Image:           cr.Spec.ConsulTemplate.Image.Repository + ":" + cr.Spec.ConsulTemplate.Image.Tag,
-					ImagePullPolicy: cr.Spec.ConsulTemplate.Image.ImagePullPolicy,
+					Image:           getConsulTemplateImage(&cr.Spec),
+					ImagePullPolicy: getConsulTemplateImagePullPolicy(&cr.Spec),
 					Command: []string{
-						"consul-template",
+						"/consul-template",
 						"-config",
 						"/etc/consul-template/config.hcl",
 					},
@@ -214,6 +227,11 @@ func newPodForCR(cr *vaultsecretv1alpha1.VaultSecret, consulTemplates *corev1.Co
 							Name:      "consul-template",
 							ReadOnly:  true,
 							MountPath: "/etc/consul-template",
+						},
+						corev1.VolumeMount{
+							Name:      "vault-token",
+							ReadOnly:  true,
+							MountPath: "/tmp/vault/agent/token",
 						},
 					},
 				},
@@ -240,6 +258,14 @@ func newPodForCR(cr *vaultsecretv1alpha1.VaultSecret, consulTemplates *corev1.Co
 						},
 					},
 				},
+				corev1.Volume{
+					Name: "vault-token",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							Medium: corev1.StorageMediumMemory,
+						},
+					},
+				},
 			},
 		},
 	}
@@ -254,8 +280,7 @@ func newConsulTemplatesConfigMapForCR(cr *vaultsecretv1alpha1.VaultSecret) *core
 		},
 		Data: map[string]string{
 			"config.hcl": templateFile(
-				"/templates/consul-template.conf.hcl",
-				"consul-template",
+				"consul-template.conf.hcl",
 				map[string]interface{}{
 					"ConsulTemplates": cr.Spec.ConsulTemplate.Templates,
 				}),
@@ -272,26 +297,64 @@ func newVaultAgentConfigMapForCR(cr *vaultsecretv1alpha1.VaultSecret) *corev1.Co
 		},
 		Data: map[string]string{
 			"config.hcl": templateFile(
-				"/templates/vault-agent.conf.hcl",
-				"vault-agent",
+				"vault-agent.conf.hcl",
 				map[string]interface{}{
+					"VaultAddress":   cr.Spec.VaultAddress,
 					"AutoAuthMethod": cr.Spec.VaultAgent.AutoAuthMethod,
 				}),
 		},
 	}
 }
 
-func templateFile(path string, tempateName string, data interface{}) string {
+func templateFile(tempate string, data interface{}) string {
 	t := template.Must(
-		template.New(tempateName).
-			Funcs(sprig.FuncMap()).
-			ParseFiles(path))
+		template.New(tempate).
+			Funcs(sprig.TxtFuncMap()).
+			ParseGlob("/templates/*"))
 
 	var templateBuffer bytes.Buffer
 	if err := t.Execute(&templateBuffer, data); err != nil {
 		// TODO
-		//return err
+		panic(err)
 	}
 
 	return templateBuffer.String()
+}
+
+func getVaultAgentImage(vs *vaultsecretv1alpha1.VaultSecretSpec) string {
+	repo := "vault"
+	tag := "latest"
+
+	if vs.VaultAgent.Image.Repository != "" {
+		repo = vs.VaultAgent.Image.Repository
+	}
+	if vs.VaultAgent.Image.Tag != "" {
+		tag = vs.VaultAgent.Image.Tag
+	}
+	return fmt.Sprintf("%s:%s", repo, tag)
+}
+
+func getVaultAgentImagePullPolicy(vs *vaultsecretv1alpha1.VaultSecretSpec) corev1.PullPolicy {
+	policy := corev1.PullAlways
+	policy = vs.VaultAgent.Image.ImagePullPolicy
+	return policy
+}
+
+func getConsulTemplateImage(vs *vaultsecretv1alpha1.VaultSecretSpec) string {
+	repo := "hashicorp/consul-template"
+	tag := "latest"
+
+	if vs.ConsulTemplate.Image.Repository != "" {
+		repo = vs.ConsulTemplate.Image.Repository
+	}
+	if vs.ConsulTemplate.Image.Tag != "" {
+		tag = vs.ConsulTemplate.Image.Tag
+	}
+	return fmt.Sprintf("%s:%s", repo, tag)
+}
+
+func getConsulTemplateImagePullPolicy(vs *vaultsecretv1alpha1.VaultSecretSpec) corev1.PullPolicy {
+	policy := corev1.PullAlways
+	policy = vs.ConsulTemplate.Image.ImagePullPolicy
+	return policy
 }

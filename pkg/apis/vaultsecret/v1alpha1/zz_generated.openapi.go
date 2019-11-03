@@ -11,9 +11,198 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"./pkg/apis/vaultsecret/v1alpha1.VaultSecret":       schema_pkg_apis_vaultsecret_v1alpha1_VaultSecret(ref),
-		"./pkg/apis/vaultsecret/v1alpha1.VaultSecretSpec":   schema_pkg_apis_vaultsecret_v1alpha1_VaultSecretSpec(ref),
-		"./pkg/apis/vaultsecret/v1alpha1.VaultSecretStatus": schema_pkg_apis_vaultsecret_v1alpha1_VaultSecretStatus(ref),
+		"./pkg/apis/vaultsecret/v1alpha1.ConsulTemplateSpec": schema_pkg_apis_vaultsecret_v1alpha1_ConsulTemplateSpec(ref),
+		"./pkg/apis/vaultsecret/v1alpha1.ContainerImageSpec": schema_pkg_apis_vaultsecret_v1alpha1_ContainerImageSpec(ref),
+		"./pkg/apis/vaultsecret/v1alpha1.SecretKeySpec":      schema_pkg_apis_vaultsecret_v1alpha1_SecretKeySpec(ref),
+		"./pkg/apis/vaultsecret/v1alpha1.SecretSpec":         schema_pkg_apis_vaultsecret_v1alpha1_SecretSpec(ref),
+		"./pkg/apis/vaultsecret/v1alpha1.VaultAgentSpec":     schema_pkg_apis_vaultsecret_v1alpha1_VaultAgentSpec(ref),
+		"./pkg/apis/vaultsecret/v1alpha1.VaultSecret":        schema_pkg_apis_vaultsecret_v1alpha1_VaultSecret(ref),
+		"./pkg/apis/vaultsecret/v1alpha1.VaultSecretSpec":    schema_pkg_apis_vaultsecret_v1alpha1_VaultSecretSpec(ref),
+		"./pkg/apis/vaultsecret/v1alpha1.VaultSecretStatus":  schema_pkg_apis_vaultsecret_v1alpha1_VaultSecretStatus(ref),
+	}
+}
+
+func schema_pkg_apis_vaultsecret_v1alpha1_ConsulTemplateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ConsulTemplateSpec is the Schema for the vaultsecrets API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("./pkg/apis/vaultsecret/v1alpha1.ContainerImageSpec"),
+						},
+					},
+					"command": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "set",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"templates": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"./pkg/apis/vaultsecret/v1alpha1.ContainerImageSpec"},
+	}
+}
+
+func schema_pkg_apis_vaultsecret_v1alpha1_ContainerImageSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "ContainerImageSpec is the Schema for the vaultsecrets API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"repository": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"tag": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"imagePullPolicy": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_vaultsecret_v1alpha1_SecretKeySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SecretKeySpec is the Schema for the vaultsecrets API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"file": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"key": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_vaultsecret_v1alpha1_SecretSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SecretSpec is the Schema for the vaultsecrets API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"keys": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "set",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("./pkg/apis/vaultsecret/v1alpha1.SecretKeySpec"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"./pkg/apis/vaultsecret/v1alpha1.SecretKeySpec"},
+	}
+}
+
+func schema_pkg_apis_vaultsecret_v1alpha1_VaultAgentSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "VaultAgentSpec is the Schema for the vaultsecrets API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("./pkg/apis/vaultsecret/v1alpha1.ContainerImageSpec"),
+						},
+					},
+					"command": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "set",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "Entrypoint array. Not executed within a shell. The docker image's ENTRYPOINT is used if this is not provided. Variable references $(VAR_NAME) are expanded using the container's environment. If a variable cannot be resolved, the reference in the input string will be unchanged. The $(VAR_NAME) syntax can be escaped with a double $$, ie: $$(VAR_NAME). Escaped references will never be expanded, regardless of whether the variable exists or not. Cannot be updated. More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"autoAuthMethod": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"./pkg/apis/vaultsecret/v1alpha1.ContainerImageSpec"},
 	}
 }
 
@@ -139,7 +328,7 @@ func schema_pkg_apis_vaultsecret_v1alpha1_VaultSecretSpec(ref common.ReferenceCa
 						},
 					},
 				},
-				Required: []string{"vaultAddress", "vaultAgent", "consulTemplate", "secret"},
+				Required: []string{"vaultAddress", "secret"},
 			},
 		},
 		Dependencies: []string{

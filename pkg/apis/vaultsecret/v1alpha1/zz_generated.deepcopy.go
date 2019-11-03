@@ -13,6 +13,11 @@ import (
 func (in *ConsulTemplateSpec) DeepCopyInto(out *ConsulTemplateSpec) {
 	*out = *in
 	out.Image = in.Image
+	if in.Command != nil {
+		in, out := &in.Command, &out.Command
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
@@ -166,7 +171,7 @@ func (in *VaultSecretList) DeepCopyObject() runtime.Object {
 func (in *VaultSecretSpec) DeepCopyInto(out *VaultSecretSpec) {
 	*out = *in
 	in.VaultAgent.DeepCopyInto(&out.VaultAgent)
-	out.ConsulTemplate = in.ConsulTemplate
+	in.ConsulTemplate.DeepCopyInto(&out.ConsulTemplate)
 	in.Secret.DeepCopyInto(&out.Secret)
 	if in.InitContainers != nil {
 		in, out := &in.InitContainers, &out.InitContainers
