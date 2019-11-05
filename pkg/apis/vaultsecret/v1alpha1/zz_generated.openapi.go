@@ -13,7 +13,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 	return map[string]common.OpenAPIDefinition{
 		"./pkg/apis/vaultsecret/v1alpha1.ConsulTemplateSpec": schema_pkg_apis_vaultsecret_v1alpha1_ConsulTemplateSpec(ref),
 		"./pkg/apis/vaultsecret/v1alpha1.ContainerImageSpec": schema_pkg_apis_vaultsecret_v1alpha1_ContainerImageSpec(ref),
-		"./pkg/apis/vaultsecret/v1alpha1.SecretKeySpec":      schema_pkg_apis_vaultsecret_v1alpha1_SecretKeySpec(ref),
 		"./pkg/apis/vaultsecret/v1alpha1.SecretSpec":         schema_pkg_apis_vaultsecret_v1alpha1_SecretSpec(ref),
 		"./pkg/apis/vaultsecret/v1alpha1.VaultAgentSpec":     schema_pkg_apis_vaultsecret_v1alpha1_VaultAgentSpec(ref),
 		"./pkg/apis/vaultsecret/v1alpha1.VaultSecret":        schema_pkg_apis_vaultsecret_v1alpha1_VaultSecret(ref),
@@ -98,31 +97,6 @@ func schema_pkg_apis_vaultsecret_v1alpha1_ContainerImageSpec(ref common.Referenc
 	}
 }
 
-func schema_pkg_apis_vaultsecret_v1alpha1_SecretKeySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "SecretKeySpec is the Schema for the vaultsecrets API",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"file": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"key": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 func schema_pkg_apis_vaultsecret_v1alpha1_SecretSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -136,28 +110,15 @@ func schema_pkg_apis_vaultsecret_v1alpha1_SecretSpec(ref common.ReferenceCallbac
 							Format: "",
 						},
 					},
-					"keys": {
-						VendorExtensible: spec.VendorExtensible{
-							Extensions: spec.Extensions{
-								"x-kubernetes-list-type": "set",
-							},
-						},
+					"path": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("./pkg/apis/vaultsecret/v1alpha1.SecretKeySpec"),
-									},
-								},
-							},
+							Type:   []string{"string"},
+							Format: "",
 						},
 					},
 				},
 			},
 		},
-		Dependencies: []string{
-			"./pkg/apis/vaultsecret/v1alpha1.SecretKeySpec"},
 	}
 }
 

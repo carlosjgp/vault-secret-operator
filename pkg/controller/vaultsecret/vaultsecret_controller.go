@@ -179,7 +179,11 @@ func resourceLabels(cr *vaultsecretv1alpha1.VaultSecret) map[string]string {
 }
 
 // newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *vaultsecretv1alpha1.VaultSecret, consulTemplates *corev1.ConfigMap, vaultAgent *corev1.ConfigMap) *corev1.Pod {
+func newPodForCR(
+	cr *vaultsecretv1alpha1.VaultSecret,
+	consulTemplates *corev1.ConfigMap,
+	vaultAgent *corev1.ConfigMap) *corev1.Pod {
+
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -233,6 +237,31 @@ func newPodForCR(cr *vaultsecretv1alpha1.VaultSecret, consulTemplates *corev1.Co
 							ReadOnly:  true,
 							MountPath: "/tmp/vault/agent/token",
 						},
+						corev1.VolumeMount{
+							Name:      "templated-secrets",
+							ReadOnly:  false,
+							MountPath: getTemplatedSecretsMountPath(&cr.Spec),
+						},
+					},
+				},
+				corev1.Container{
+					Name:  "kubectl",
+					Image: "bitnami/kubectl:1.16",
+					Command: []string{
+						"sh",
+						"-c",
+						fmt.Sprintf(
+							"while true; do; kubectl create secret generic %s --from-file %s ; sleep 5 ; done",
+							cr.Spec.Secret.Name,
+							getTemplatedSecretsMountPath(&cr.Spec),
+						),
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						corev1.VolumeMount{
+							Name:      "templated-secrets",
+							ReadOnly:  true,
+							MountPath: getTemplatedSecretsMountPath(&cr.Spec),
+						},
 					},
 				},
 			),
@@ -260,6 +289,14 @@ func newPodForCR(cr *vaultsecretv1alpha1.VaultSecret, consulTemplates *corev1.Co
 				},
 				corev1.Volume{
 					Name: "vault-token",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{
+							Medium: corev1.StorageMediumMemory,
+						},
+					},
+				},
+				corev1.Volume{
+					Name: "templated-secrets",
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{
 							Medium: corev1.StorageMediumMemory,
@@ -357,4 +394,12 @@ func getConsulTemplateImagePullPolicy(vs *vaultsecretv1alpha1.VaultSecretSpec) c
 	policy := corev1.PullAlways
 	policy = vs.ConsulTemplate.Image.ImagePullPolicy
 	return policy
+}
+
+func getTemplatedSecretsMountPath(vs *vaultsecretv1alpha1.VaultSecretSpec) string {
+	mountPath := "/tmp/templated"
+	if vs.Secret.Path != "" {
+		mountPath = vs.Secret.Path
+	}
+	return mountPath
 }

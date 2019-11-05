@@ -58,15 +58,7 @@ type VaultAgentSpec struct {
 // +k8s:openapi-gen=true
 type SecretSpec struct {
 	Name string `json:"name,omitempty" protobuf:"bytes,1,name=name"`
-	// +listType=set
-	Keys []SecretKeySpec `json:"keys,omitempty" protobuf:"bytes,2,rep,name=consulTemplate"`
-}
-
-// SecretKeySpec is the Schema for the vaultsecrets API
-// +k8s:openapi-gen=true
-type SecretKeySpec struct {
-	File string `json:"file,omitempty" protobuf:"bytes,1,name=file"`
-	Key  string `json:"key,omitempty" protobuf:"bytes,2,name=key"`
+	Path string `json:"path,omitempty" protobuf:"bytes,2,rep,name=path"`
 }
 
 // ConsulTemplateSpec is the Schema for the vaultsecrets API
