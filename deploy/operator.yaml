@@ -15,8 +15,7 @@ spec:
       serviceAccountName: vault-secret-operator
       containers:
         - name: vault-secret-operator
-          # Replace this with the built image name
-          image: carlosjgp/vault-secret-operator:latest
+          image: carlosjgp/vault-secret-operator-controller:latest
           command:
           - vault-secret-operator
           imagePullPolicy: Always

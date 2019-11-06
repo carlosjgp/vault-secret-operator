@@ -246,15 +246,24 @@ func newPodForCR(
 				},
 				corev1.Container{
 					Name:  "kubectl",
-					Image: "bitnami/kubectl:1.16",
-					Command: []string{
-						"sh",
-						"-c",
-						fmt.Sprintf(
-							"while true; do; kubectl create secret generic %s --from-file %s ; sleep 5 ; done",
-							cr.Spec.Secret.Name,
-							getTemplatedSecretsMountPath(&cr.Spec),
-						),
+					Image: "carlosjgp/vault-secret-operator-kubectl",
+					Env: []corev1.EnvVar{
+						corev1.EnvVar{
+							Name:  "SECRET",
+							Value: cr.Spec.Secret.Name,
+						},
+						corev1.EnvVar{
+							Name:  "FOLDER",
+							Value: getTemplatedSecretsMountPath(&cr.Spec),
+						},
+						corev1.EnvVar{
+							Name: "NAMESPACE",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									FieldPath: "metadata.namespace",
+								},
+							},
+						},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						corev1.VolumeMount{
