@@ -4,6 +4,25 @@ Reads secrets from Vault and creates configmaps or secrets on Kubenetes.
 It uses Vault agent to keep the secrets always InSync with between Vault
 and Kubernetes
 
+## TODO
+
+### Operator
+
+- Gihub releases
+- Start using good commit messages for the Changelog
+- Version Docker images
+- How to manage Service accounts and Roles
+- How to manage VaultSecret deletion and K8s secret. For now we do nothing
+
+### Testing
+
+- Helm values for the tests
+- Commands to configure Vault
+- Enable K8s auth in Vault
+- Link RBAC - ServiceAccount
+- Add secret to test to Vault KV
+
+
 ## Containers
 
 ### Vault agent
@@ -64,13 +83,6 @@ Using Minikube with Kubernetes 1.15 since the deprecated APIs have been removed 
 #### Vault
 
 Deployed `incubator/vault` Helm chart for Vault version `1.2.3`
-
-TODO:
-- Helm values
-- Commands to configure Vault
-- Enable K8s auth
-- Link RBAC - ServiceAccount
-- Add secret to test
 
 #### Operator
 
