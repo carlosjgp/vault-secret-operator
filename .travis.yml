@@ -1,0 +1,45 @@
+# Credit: https://gist.github.com/y0ssar1an/df2dab474520c4086926f672c52db139
+#
+# use the latest ubuntu environment (18.04) available on travis
+dist: xenial
+
+language: go
+
+# Force-enable Go modules. Also force go to use the code in vendor/
+# These will both be unnecessary when Go 1.14 lands.
+env: GO111MODULE=on GOFLAGS='-mod vendor' OPERATOR_SDK_VERSION=v0.12.0
+
+# You don't need to test on very old versions of the Go compiler. It's the user's
+# responsibility to keep their compiler up to date.
+go:
+  - 1.13.x
+
+# Only clone the most recent commit.
+git:
+  depth: 1
+
+# Skip the install step. Don't `go get` dependencies. Only build with the code
+# in vendor/
+install: true
+
+# Don't email me the results of the test runs.
+notifications:
+  email: false
+
+services:
+  - docker
+
+# Anything in before_script that returns a nonzero exit code will flunk the
+# build and immediately stop. It's sorta like having set -e enabled in bash.
+before_script:
+  - curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu
+  - chmod +x operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu
+  - sudo mkdir -p usr-bin
+  - sudo mv operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu usr-bin/operator-sdk
+  - export PATH=$PATH:$PWD/usr-bin/
+
+script:
+  - make build-operator
+  - make docker-push-operator
+  - make build-kubectl
+  - make docker-push-kubectl
