@@ -247,6 +247,12 @@ func schema_pkg_apis_vaultsecret_v1alpha1_VaultSecretSpec(ref common.ReferenceCa
 							Ref: ref("./pkg/apis/vaultsecret/v1alpha1.ConsulTemplateSpec"),
 						},
 					},
+					"kubectlVersion": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 					"secret": {
 						SchemaProps: spec.SchemaProps{
 							Ref: ref("./pkg/apis/vaultsecret/v1alpha1.SecretSpec"),

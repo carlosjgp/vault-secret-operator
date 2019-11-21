@@ -1,4 +1,4 @@
-# Vault sercret Operator
+# Vault sercret Operator image:https://travis-ci.org/carlosjgp/vault-secret-operator.svg?branch=master["Build Status", link="https://travis-ci.org/carlosjgp/vault-secret-operator"]
 
 Reads secrets from Vault and creates configmaps or secrets on Kubenetes.
 It uses Vault agent to keep the secrets always InSync with between Vault

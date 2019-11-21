@@ -180,6 +180,8 @@ func newPodForCR(
 	consulTemplates *corev1.ConfigMap,
 	vaultAgent *corev1.ConfigMap) *corev1.Pod {
 
+	execMode := int32(0777)
+
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -242,7 +244,10 @@ func newPodForCR(
 				},
 				corev1.Container{
 					Name:  "kubectl",
-					Image: "carlosjgp/vault-secret-operator-kubectl",
+					Image: fmt.Sprintf("%s:%s","carlosjgp/kubectl", getKubectlVersion(&cr.Spec)),
+					Command: []string{
+						"/entrypoint.sh",
+					},
 					Env: []corev1.EnvVar{
 						corev1.EnvVar{
 							Name:  "SECRET",
@@ -267,11 +272,28 @@ func newPodForCR(
 							ReadOnly:  true,
 							MountPath: getTemplatedSecretsMountPath(&cr.Spec),
 						},
+						corev1.VolumeMount{
+							Name:      "kubectl-entrypoint",
+							ReadOnly:  true,
+							MountPath: "/entrypoint.sh",
+							SubPath:   "/entrypoint.sh",
+						},
 					},
 				},
 			),
 
 			Volumes: []corev1.Volume{
+				corev1.Volume{
+					Name: "kubectl-entrypoint",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							DefaultMode: &execMode,
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "vault-secret-operator-kubectl",
+							},
+						},
+					},
+				},
 				corev1.Volume{
 					Name: "vault-agent",
 					VolumeSource: corev1.VolumeSource{
@@ -393,6 +415,15 @@ func getConsulTemplateImage(vs *vaultsecretv1alpha1.VaultSecretSpec) string {
 		tag = vs.ConsulTemplate.Image.Tag
 	}
 	return fmt.Sprintf("%s:%s", repo, tag)
+}
+
+func getKubectlVersion(vs *vaultsecretv1alpha1.VaultSecretSpec) string {
+	tag := "latest"
+
+	if vs.KubectlVersion != "" {
+		tag = vs.KubectlVersion
+	}
+	return tag
 }
 
 func getConsulTemplateImagePullPolicy(vs *vaultsecretv1alpha1.VaultSecretSpec) corev1.PullPolicy {

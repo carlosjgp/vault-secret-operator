@@ -5,9 +5,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // VaultSecretSpec defines the desired state of VaultSecret
 // +k8s:openapi-gen=true
 type VaultSecretSpec struct {
@@ -19,6 +16,7 @@ type VaultSecretSpec struct {
 	VaultCA        string             `json:"vaultCA,omitempty" protobuf:"bytes,3,opt,name=vaultCA"`
 	VaultAgent     VaultAgentSpec     `json:"vaultAgent,omitempty" protobuf:"bytes,4,name=vaultAgent"`
 	ConsulTemplate ConsulTemplateSpec `json:"consulTemplate,omitempty" protobuf:"bytes,5,name=consulTemplate"`
+	KubectlVersion string             `json:"kubectlVersion,omitempty" protobuf:"bytes,5,name=kubectlVersion"`
 	Secret         SecretSpec         `json:"secret" protobuf:"bytes,6,opt,name=secret"`
 	// InitContainers to be used on the POD
 	// +listType=set
