@@ -11,6 +11,7 @@ DOCKER_IMAGE_CONTROLLER=${OWNER}/${OPERATOR}:${CONTROLLER_VERSION}
 build: generate-openapi
 	cd operator && \
 	operator-sdk build \
+		--verbose \
 		${DOCKER_IMAGE_CONTROLLER}
 
 generate-crd:
