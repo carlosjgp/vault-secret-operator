@@ -9,6 +9,7 @@ import (
 
 	"github.com/Masterminds/sprig"
 	vaultsecretv1alpha1 "github.com/carlosjgp/vault-secret-operator/pkg/apis/vaultsecret/v1alpha1"
+	"github.com/carlosjgp/vault-secret-operator/version"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -180,8 +181,6 @@ func newPodForCR(
 	consulTemplates *corev1.ConfigMap,
 	vaultAgent *corev1.ConfigMap) *corev1.Pod {
 
-	execMode := int32(0777)
-
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
@@ -211,7 +210,7 @@ func newPodForCR(
 						},
 						corev1.VolumeMount{
 							Name:      "vault-token",
-							MountPath: "/tmp/vault/agent/token",
+							MountPath: "/tmp/vault/agent",
 						},
 					},
 				},
@@ -233,7 +232,7 @@ func newPodForCR(
 						corev1.VolumeMount{
 							Name:      "vault-token",
 							ReadOnly:  true,
-							MountPath: "/tmp/vault/agent/token",
+							MountPath: "/tmp/vault/agent",
 						},
 						corev1.VolumeMount{
 							Name:      "templated-secrets",
@@ -244,10 +243,7 @@ func newPodForCR(
 				},
 				corev1.Container{
 					Name:  "kubectl",
-					Image: fmt.Sprintf("%s:%s","carlosjgp/kubectl", getKubectlVersion(&cr.Spec)),
-					Command: []string{
-						"/entrypoint.sh",
-					},
+					Image: fmt.Sprintf("%s:%s", "carlosjgp/vault-secret-operator-kubectl", getKubectlVersion(&cr.Spec)),
 					Env: []corev1.EnvVar{
 						corev1.EnvVar{
 							Name:  "SECRET",
@@ -272,28 +268,11 @@ func newPodForCR(
 							ReadOnly:  true,
 							MountPath: getTemplatedSecretsMountPath(&cr.Spec),
 						},
-						corev1.VolumeMount{
-							Name:      "kubectl-entrypoint",
-							ReadOnly:  true,
-							MountPath: "/entrypoint.sh",
-							SubPath:   "/entrypoint.sh",
-						},
 					},
 				},
 			),
 
 			Volumes: []corev1.Volume{
-				corev1.Volume{
-					Name: "kubectl-entrypoint",
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode: &execMode,
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "vault-secret-operator-kubectl",
-							},
-						},
-					},
-				},
 				corev1.Volume{
 					Name: "vault-agent",
 					VolumeSource: corev1.VolumeSource{
@@ -418,12 +397,12 @@ func getConsulTemplateImage(vs *vaultsecretv1alpha1.VaultSecretSpec) string {
 }
 
 func getKubectlVersion(vs *vaultsecretv1alpha1.VaultSecretSpec) string {
-	tag := "latest"
+	tag := "v1.16.0"
 
 	if vs.KubectlVersion != "" {
 		tag = vs.KubectlVersion
 	}
-	return tag
+	return fmt.Sprintf("%s-v%s", tag, version.Version)
 }
 
 func getConsulTemplateImagePullPolicy(vs *vaultsecretv1alpha1.VaultSecretSpec) corev1.PullPolicy {

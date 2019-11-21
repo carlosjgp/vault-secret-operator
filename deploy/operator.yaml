@@ -15,7 +15,7 @@ spec:
       serviceAccountName: vault-secret-operator
       containers:
         - name: vault-secret-operator
-          image: carlosjgp/vault-secret-operator-controller:latest
+          image: carlosjgp/vault-secret-operator-controller:v0.0.1
           command:
           - vault-secret-operator
           imagePullPolicy: Always
@@ -30,3 +30,10 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "vault-secret-operator"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 200m
+              memory: 150Mi
