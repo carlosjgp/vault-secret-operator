@@ -9,17 +9,14 @@ DOCKER_IMAGE_CONTROLLER=${OWNER}/${OPERATOR}:${CONTROLLER_VERSION}
 .PHONY: generate-crd generate-openapi build
 
 build: generate-openapi
-	cd operator && \
 	operator-sdk build \
 		--verbose \
 		${DOCKER_IMAGE_CONTROLLER}
 
 generate-crd:
-	cd operator && \
 	operator-sdk generate k8s
 
 generate-openapi: generate-crd
-	cd operator && \
 	operator-sdk generate openapi
 
 push: build
