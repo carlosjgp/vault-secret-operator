@@ -27,6 +27,7 @@ jobs:
 
     - name: Make build
       run: |
+        ls
         make build
 
     - name: Make push
