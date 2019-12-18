@@ -273,42 +273,34 @@ func newPodForCR(
 			),
 
 			Volumes: []corev1.Volume{
-				corev1.Volume{
-					Name: "vault-agent",
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: vaultAgent.Name,
-							},
-						},
-					},
+				volumeFromConfigMap("vault-agent", vaultAgent.Name),
+				volumeFromConfigMap("consul-template", consulTemplates.Name),
+				newEmptyDirInMemory("vault-token"),
+				newEmptyDirInMemory("templated-secrets"),
+			},
+		},
+	}
+}
+
+func volumeFromConfigMap(name string, configMapName string) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: configMapName,
 				},
-				corev1.Volume{
-					Name: "consul-template",
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: consulTemplates.Name,
-							},
-						},
-					},
-				},
-				corev1.Volume{
-					Name: "vault-token",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{
-							Medium: corev1.StorageMediumMemory,
-						},
-					},
-				},
-				corev1.Volume{
-					Name: "templated-secrets",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{
-							Medium: corev1.StorageMediumMemory,
-						},
-					},
-				},
+			},
+		},
+	}
+}
+
+func newEmptyDirInMemory(name string) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{
+				Medium: corev1.StorageMediumMemory,
 			},
 		},
 	}

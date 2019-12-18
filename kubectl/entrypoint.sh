@@ -1,5 +1,6 @@
 #!/bin/bash
 while true; do
+    date -Iseconds
     kubectl create \
         secret generic \
         --from-file ${FOLDER} \
