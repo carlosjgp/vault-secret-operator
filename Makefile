@@ -11,7 +11,7 @@ DOCKER_IMAGE_KUBECTL=${OWNER}/${OPERATOR}-kubectl:${KUBECTL_VERSION}-${CONTROLLE
 
 .PHONY: generate-crd generate-openapi build
 
-build: generate-openapi
+build: generate-crd
 	operator-sdk build \
 		${DOCKER_IMAGE_CONTROLLER}
 	docker build \
@@ -21,9 +21,7 @@ build: generate-openapi
 
 generate-crd:
 	operator-sdk generate k8s
-
-generate-openapi: generate-crd
-	operator-sdk generate openapi
+	operator-sdk generate crds
 
 push: build
 	docker push ${DOCKER_IMAGE_CONTROLLER}
