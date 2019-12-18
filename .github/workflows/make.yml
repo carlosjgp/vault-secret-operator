@@ -1,0 +1,28 @@
+name: Make
+on: [push]
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.13
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
+
+    - name: Check out code
+      uses: actions/checkout@v1
+
+    - name: Install operator-sdk
+      env:
+        RELEASE_VERSION: v0.13.0  
+      run: |
+        curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
+        chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
+        mv operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu operator-sdk
+        
+    - name: Build
+      run: make build push
