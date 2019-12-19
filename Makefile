@@ -9,20 +9,32 @@ DOCKER_IMAGE_CONTROLLER=${OWNER}/${OPERATOR}-controller:${CONTROLLER_VERSION}
 DOCKER_IMAGE_KUBECTL=${OWNER}/${OPERATOR}-kubectl:${KUBECTL_VERSION}-${CONTROLLER_VERSION}
 
 
-.PHONY: generate-crd generate-openapi build
+.PHONY: generate-crd build-kubectl build-controller build push-kubectl push-controller push kubectl controller
 
-build: generate-crd
-	operator-sdk build \
-		${DOCKER_IMAGE_CONTROLLER}
-	docker build \
-		--build-arg KUBECTL_VERSION=${KUBECTL_VERSION} \
-		-t ${DOCKER_IMAGE_KUBECTL} \
-		kubectl
+build: build-kubectl build-controller
+push: push-kubectl push-controller
 
 generate-crd:
 	operator-sdk generate k8s
 	operator-sdk generate crds
 
-push: build
+
+build-controller: generate-crd
+	operator-sdk build \
+		${DOCKER_IMAGE_CONTROLLER}
+
+push-controller: build-controller
 	docker push ${DOCKER_IMAGE_CONTROLLER}
+
+controller: build-controller push-controller
+
+build-kubectl:
+	docker build \
+		--build-arg KUBECTL_VERSION=${KUBECTL_VERSION} \
+		-t ${DOCKER_IMAGE_KUBECTL} \
+		kubectl
+
+push-kubectl: build-kubectl
 	docker push ${DOCKER_IMAGE_KUBECTL}
+
+kubectl: build-kubectl push-kubectl

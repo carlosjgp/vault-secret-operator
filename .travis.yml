@@ -26,24 +26,34 @@ notifications:
 services:
   - docker
 
-env:
-  - KUBECTL_VERSION=v1.12.10
-  - KUBECTL_VERSION=v1.13.10
-  - KUBECTL_VERSION=v1.14.6
-  - KUBECTL_VERSION=v1.15.7
-  - KUBECTL_VERSION=v1.16.4
-  - KUBECTL_VERSION=v1.17.0
+jobs:
+  include:
+    - stage: kubectl
+      env:
+        - KUBECTL_VERSION=v1.12.10
+        - KUBECTL_VERSION=v1.13.10
+        - KUBECTL_VERSION=v1.14.6
+        - KUBECTL_VERSION=v1.15.7
+        - KUBECTL_VERSION=v1.16.4
+        - KUBECTL_VERSION=v1.17.0
+      # Anything in before_script that returns a nonzero exit code will flunk the
+      # build and immediately stop. It's sorta like having set -e enabled in bash.
+      before_script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-# Anything in before_script that returns a nonzero exit code will flunk the
-# build and immediately stop. It's sorta like having set -e enabled in bash.
-before_script:
-  - export OPERATOR_SDK_VERSION=v0.13.0
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  - curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu
-  - chmod +x operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu
-  - sudo mkdir -p usr-bin
-  - sudo mv operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu usr-bin/operator-sdk
-  - export PATH=$PATH:$PWD/usr-bin/
+      script:
+        - make kubectl KUBECTL_VERSION=${KUBECTL_VERSION}
 
-script:
-  - make build push KUBECTL_VERSION=${KUBECTL_VERSION}
+    - stage: controller
+      # Anything in before_script that returns a nonzero exit code will flunk the
+      # build and immediately stop. It's sorta like having set -e enabled in bash.
+      before_script:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        - export OPERATOR_SDK_VERSION=v0.13.0
+        - curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu
+        - chmod +x operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu
+        - sudo mkdir -p usr-bin
+        - sudo mv operator-sdk-${OPERATOR_SDK_VERSION}-x86_64-linux-gnu usr-bin/operator-sdk
+        - export PATH=$PATH:$PWD/usr-bin/
+      script:
+        - make controller
