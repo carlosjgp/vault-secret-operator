@@ -243,7 +243,7 @@ func newPodForCR(
 				},
 				corev1.Container{
 					Name:  "kubectl",
-					Image: fmt.Sprintf("%s:%s", "carlosjgp/vault-secret-operator-kubectl", getKubectlVersion(&cr.Spec)),
+					Image: fmt.Sprintf("%s:%s", "carlosjgp/kubectl", getKubectlVersion(&cr.Spec)),
 					Env: []corev1.EnvVar{
 						corev1.EnvVar{
 							Name:  "SECRET",
@@ -268,6 +268,12 @@ func newPodForCR(
 							ReadOnly:  true,
 							MountPath: getTemplatedSecretsMountPath(&cr.Spec),
 						},
+						corev1.VolumeMount{
+							Name:      "kubectl-entrypoint",
+							ReadOnly:  true,
+							MountPath: "/entrypoint.sh",
+							SubPath:   "entrypoint.sh",
+						},
 					},
 				},
 			),
@@ -275,6 +281,7 @@ func newPodForCR(
 			Volumes: []corev1.Volume{
 				volumeFromConfigMap("vault-agent", vaultAgent.Name),
 				volumeFromConfigMap("consul-template", consulTemplates.Name),
+				volumeFromConfigMapMode("kubectl-entrypoint", "vault-secret-operator-kubectl", int32(0777)),
 				newEmptyDirInMemory("vault-token"),
 				newEmptyDirInMemory("templated-secrets"),
 			},
@@ -283,6 +290,10 @@ func newPodForCR(
 }
 
 func volumeFromConfigMap(name string, configMapName string) corev1.Volume {
+	return volumeFromConfigMapMode(name, configMapName, int32(0644))
+}
+
+func volumeFromConfigMapMode(name string, configMapName string, defaultMode int32) corev1.Volume {
 	return corev1.Volume{
 		Name: name,
 		VolumeSource: corev1.VolumeSource{
@@ -290,6 +301,7 @@ func volumeFromConfigMap(name string, configMapName string) corev1.Volume {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: configMapName,
 				},
+				DefaultMode: &defaultMode,
 			},
 		},
 	}
@@ -389,7 +401,7 @@ func getConsulTemplateImage(vs *vaultsecretv1alpha1.VaultSecretSpec) string {
 }
 
 func getKubectlVersion(vs *vaultsecretv1alpha1.VaultSecretSpec) string {
-	tag := "v1.16.0"
+	tag := "v1.17.0"
 
 	if vs.KubectlVersion != "" {
 		tag = vs.KubectlVersion
